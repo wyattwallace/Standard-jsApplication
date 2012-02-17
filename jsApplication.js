@@ -58,12 +58,12 @@ var memoizeFnc = function memoize( func, context )
 }
 
 /**
- * Wrapper for key value pair Data passed via ajax
+ * Wrapper for key value pair Data
  *
  * @author Wyatt Wallace <wwallace@myyearbook.com>
  * @constructor
  */
-AjaxData = function( )
+StdDataObject = function( )
 {
   /** @type object */
   var data = {};
@@ -256,10 +256,10 @@ jsApplication.Ajax = function( )
    * Method wraps ajax call funcationality.
    *
    * ToDo:
-   *  - validate that data is of type AjaxData
+   *  - validate that data is of type StdDataObject
    *
    * @param {string} url
-   * @param {AjaxData}
+   * @param {StdDataObject}
    * @return {jsApplication.Ajax}
    */
   this.doAjax = function( url, data )
@@ -301,7 +301,7 @@ jsApplication.Ajax = function( )
    *             cached in memoizer
    *
    * @param {string} url
-   * @param {AjaxData}
+   * @param {StdDataObject}
    * @return {mixed} value passed back from server or undefined
    */
   this._doAjax = function( url, data )

@@ -33,30 +33,30 @@ var url = 'http://helloworld.com';
 // create new jsApplication.Ajax object
 var myJSApp = new jsApplication['Ajax']( );
 
-// create new AjaxData object
-ajaxData1 = new AjaxData( );
+// create new StdDataObject object
+ajaxData1 = new StdDataObject( );
 // set some key value pairs
 ajaxData1.setData( 'foo', '40' );
 ajaxData1.setData( 'bar', '50' );
 // call doAjax w/ local cache enabled
 myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData1 );
 
-// create another AjaxData object
-ajaxData2 = new AjaxData( );
+// create another StdDataObject object
+ajaxData2 = new StdDataObject( );
 // set some key value pairs
 ajaxData2.setData( 'foo', '10' );
 ajaxData2.setData( 'bar', '20' );
 // call doAjax w/ local caching
 myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData2 );
 
-// call doAjax w/ local cacheing and same AjaxData as previously used.
+// call doAjax w/ local cacheing and same StdDataObject as previously used.
 // jsApplication.Ajax _should_ get the data from cache instead of making
 // ajax call to server.
 myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData1 );
 
 /** remove this case */
-// create another new AjaxData object
-ajaxData3 = new AjaxData( );
+// create another new StdDataObject object
+ajaxData3 = new StdDataObject( );
 // set some key value pairs.  setting to lower nubmers to spoof non-success response
 ajaxData3.setData( 'foo', '1' );
 ajaxData3.setData( 'bar', '2' );
@@ -65,7 +65,7 @@ myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData3 );
 /** end remove this */
 
 // create new AjaxDAta object
-ajaxData4 = new AjaxData( );
+ajaxData4 = new StdDataObject( );
 // set key value pairs. 40 and 20 were previously used but only one in two previous requests.
 // should *not* hit the cache
 ajaxData4.setData( 'foo', '40' );
@@ -73,7 +73,7 @@ ajaxData4.setData( 'bar', '20' );
 // call doAjax w/ local caching
 myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData4 );
 
-// call doAjax w/ AjaxData object previously cache but we are calling doAjax w/o caching
+// call doAjax w/ StdDataObject object previously cache but we are calling doAjax w/o caching
 // so code should make Ajax call to server
 myJSApp.doAjax( url, ajaxData1 );
 
