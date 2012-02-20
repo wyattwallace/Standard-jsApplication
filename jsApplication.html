@@ -6,76 +6,71 @@
 <script type="text/javascript" src="jsApplication.js"></script>
 <script type="text/javascript">
 
-/**
- * Create concrete jsApplication with required doAjaxSuccess() and doAjaxError() methods
- *
- * @author Wyatt Wallace <wwallace@myyearbook.com>
- */
-jsApplication.Ajax.prototype = {
 
-  doAjaxSuccess : function( data )
+var testApp = {
+
+  myJSApp : {},
+
+  init : function(  )
   {
-    // do custom success here
-    console.log( 'In Child doAjaxSuccess() and returned data =' );
+    this.myJSApp = new jsApplication['Ajax']( );
+  },
+
+  getPaginatedStaticData : function( pageNumber )
+  {
+    this.myJSApp.subscribe( 'success', this, this.ajaxSuccess1 ).subscribe( 'error', this, this.ajaxErrorHandler );
+    
+    ajaxData = new StdDataObject( );
+    ajaxData.setData( 'pageNumber', pageNumber );
+    url = 'http://www.foo.com/static';
+
+    this.myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData );
+  },
+
+  getDynamicData : function( memberId )
+  {
+    this.myJSApp.subscribe( 'success', this, this.ajaxSuccess2 ).subscribe( 'error', this, this.ajaxErrorHandler );
+    
+    ajaxData = new StdDataObject( );
+    ajaxData.setData( 'memberId', memberId );
+    url = 'http://www.foo.com/dynamic';
+
+    this.myJSApp.doAjax( url, ajaxData );
+  },
+
+  ajaxSuccess1 : function( data )
+  {
+    console.log('doing ajax success 1 and data = ');
     console.log( data );
   },
 
-  doAjaxError : function( xhr, textStatus, errorThrown )
+  ajaxSuccess2 : function( data )
   {
-    // do custom error handling here
+    console.log('doing ajax success 2 and data = ');
+    console.log( data );
+  },
+
+  ajaxErrorHandler : function( msg )
+  {
+    console.log( 'error message = ' + msg );
   }
 
 };
 
 
-// URL for Ajax request
-var url = 'http://helloworld.com';
-// create new jsApplication.Ajax object
-var myJSApp = new jsApplication['Ajax']( );
+testApp.init();
+// get page 1 of static content
+testApp.getPaginatedStaticData( 1 );
+// get page 2 of static content
+testApp.getPaginatedStaticData( 2 );
+// get page 1 of static content (again).  should fetch from cache
+testApp.getPaginatedStaticData( 1 );
+// contrived error case
+testApp.getPaginatedStaticData( -1 );
 
-// create new StdDataObject object
-ajaxData1 = new StdDataObject( );
-// set some key value pairs
-ajaxData1.setData( 'foo', '40' );
-ajaxData1.setData( 'bar', '50' );
-// call doAjax w/ local cache enabled
-myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData1 );
+// get dynamic data
+testApp.getDynamicData( 12345678 );
 
-// create another StdDataObject object
-ajaxData2 = new StdDataObject( );
-// set some key value pairs
-ajaxData2.setData( 'foo', '10' );
-ajaxData2.setData( 'bar', '20' );
-// call doAjax w/ local caching
-myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData2 );
-
-// call doAjax w/ local cacheing and same StdDataObject as previously used.
-// jsApplication.Ajax _should_ get the data from cache instead of making
-// ajax call to server.
-myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData1 );
-
-/** remove this case */
-// create another new StdDataObject object
-ajaxData3 = new StdDataObject( );
-// set some key value pairs.  setting to lower nubmers to spoof non-success response
-ajaxData3.setData( 'foo', '1' );
-ajaxData3.setData( 'bar', '2' );
-// call doAjax w/ local caching set and non-success value returned from jsApplication.Ajax.doAjax
-myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData3 );
-/** end remove this */
-
-// create new AjaxDAta object
-ajaxData4 = new StdDataObject( );
-// set key value pairs. 40 and 20 were previously used but only one in two previous requests.
-// should *not* hit the cache
-ajaxData4.setData( 'foo', '40' );
-ajaxData4.setData( 'bar', '20' );
-// call doAjax w/ local caching
-myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData4 );
-
-// call doAjax w/ StdDataObject object previously cache but we are calling doAjax w/o caching
-// so code should make Ajax call to server
-myJSApp.doAjax( url, ajaxData1 );
 
 </script>
 </head>

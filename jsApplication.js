@@ -17,7 +17,7 @@ var memoizeFnc = function memoize( func, context )
       {
         if ( !( param in cache ) ) 
         {
-          // console.log( 'cache miss : ' + argPos + 'about to call expensive ajax' );
+          // console.log( 'cache miss : ' + argPos + ' about to call expensive ajax' );
           //   cache[param] = func.apply(context, arguments);
           rtnData = func.apply(context, arguments);
 
@@ -160,6 +160,8 @@ jsApplication.Ajax = function( )
   var memoize = false;
   /** @type ??? memoize function */
   var memoizedAjax = null;
+  /** @type object list of channels [success,error] */
+  var channels = {};
 
   /**
    * Set data type used when making Ajax call.
@@ -252,6 +254,18 @@ jsApplication.Ajax = function( )
     memoize = false;
   };
 
+  this.subscribe = function( channel, context, fn )
+  {
+    if ( ! channels[channel] )
+    {
+      channels[channel] = {};
+    }
+
+    channels[channel] = { context: context, callback: fn };
+    
+    return _this;
+  };
+
   /**
    * Method wraps ajax call funcationality.
    *
@@ -282,7 +296,7 @@ jsApplication.Ajax = function( )
     // not calling doAjaxSuccess if rtnData = undefined
     if ( rtnData !== undefined )
     {
-      _this.doAjaxSuccess( rtnData );
+      this.publish( 'success', rtnData );
     }
     // else { console.log( 'not calling doAjaxSuccess bc rtnData = undefined' ); }
 
@@ -321,11 +335,14 @@ jsApplication.Ajax = function( )
       num = num + parseInt( d[i], 10 );
     }
 
-    if ( num < 30 )
+    if ( num < 0 )
     {
+      // console.log( 'in _doAjax in error condition bc num = ' + num );
+      this.publish( 'error', 'abc123' );
       return rtnData;
     }
     rtnData = num;
+
 
 /*
     $.ajax({
@@ -336,16 +353,32 @@ jsApplication.Ajax = function( )
       type: this.getType( ),
       success: function( data )
       {
+        this.publish( 'success', data );
         rtnData = data;
       },
       error: function( xhr, textStatus, errorThrown )
       {
-        this.doAjaxError( xhr, textStatus, errorThrown );
+        this.publish( 'error', xhr, textStatus, errorThrown );
       }
     });
 */
 
     return rtnData;
+  };
+
+  // Publish/broadcast an event to the rest of the application
+  this.publish = function( channel )
+  {
+    if ( ! channels[channel] ) 
+    {
+      return false;
+    }
+
+    var args = Array.prototype.slice.call(arguments, 1);
+    var subscription = channels[channel];
+    subscription.callback.apply(subscription.context, args);
+
+    return _this;
   };
 
 };
