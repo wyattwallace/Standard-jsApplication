@@ -104,21 +104,12 @@ StdDataObject = function( )
       dataArray[count++] = i + ':' + data[i];
     }
     var str = dataArray.join(",");
-    return this.hashString( str );
+
+    JSON.stringify = JSON.stringify || function( str ) { return str; };
+
+    return JSON.stringify( str );
   };
 
-  /**
-   * Return hash of string passed in.
-   *
-   * ToDo: figure out best way to do this
-   *
-   * @param {string} string to be hashed
-   * @return {string}
-   */
-  this.hashString = function( str )
-  {
-    return str;
-  }
 }
 
 /**
