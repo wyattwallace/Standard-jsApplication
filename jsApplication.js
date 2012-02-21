@@ -258,11 +258,22 @@ jsApplication.Ajax = function( )
   {
     if ( ! channels[channel] )
     {
-      channels[channel] = {};
+      channels[channel] = [];
     }
 
-    channels[channel] = { context: context, callback: fn };
-    
+    // loop over channels and do not set the same callback twice
+    for ( var i = 0, l = channels[channel].length; i < l; i++ )
+    {
+      var subscription = channels[channel][i]
+      if ( subscription.context == context && subscription.callback == fn )
+      {
+        // do not set twice
+        return _this;
+      }
+    }
+
+    channels[channel].push({ context: context, callback: fn });    
+
     return _this;
   };
 
@@ -375,8 +386,12 @@ jsApplication.Ajax = function( )
     }
 
     var args = Array.prototype.slice.call(arguments, 1);
-    var subscription = channels[channel];
-    subscription.callback.apply(subscription.context, args);
+
+    for ( var i = 0, l = channels[channel].length; i < l; i++ )
+    {
+      var subscription = channels[channel][i];
+      subscription.callback.apply( subscription.context, args );
+    }
 
     return _this;
   };
