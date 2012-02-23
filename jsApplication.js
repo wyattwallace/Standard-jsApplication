@@ -125,11 +125,8 @@ var jsApplication = {};
  * Notes:
  *  - setting memoize to true will locally cache ajax calls.  
  *  - memoize must be explicitly set each time.
- *  - doAjax() calls doAjaxSuccess() on success. doAjaxSuccess() must be implemented in concrete class.
- *  - doAjax() calls doAjaxError() on error. doAjaxError() must be implemented in concrete class
  *
  * ToDo:
- *  - create an init() method that checks for doAjaxSuccess and doAjaxError and throw an error if not found.
  *  - create enums for dataType and type and validate input against them
  *  - validate all setters
  *
@@ -155,6 +152,32 @@ jsApplication.Ajax = function( )
   var channels = {};
 
   /**
+   * @constant
+   * @type Object
+   * @enum {string}
+   */
+  var channelsMap = { SUCCESS: 'success',
+                      ERROR: 'error',
+                      BEFORE_SEND: 'before_send',
+                      COMPLETE: 'complete',
+                      STATUS_CODE_404: 'status_code_404' };
+
+  /**
+   * Private function to reset class.  Called after each Ajax request.  
+   * Sets {@link memoize} to false, and {@link channels} to an empty object.
+   * Called from {@link doAjax()} 
+   *
+   * @return {void}
+   */
+  function reset( )
+  {
+    memoize = false;
+    channels = { };
+
+    console.log( '------------' );
+  };
+
+  /**
    * Set data type used when making Ajax call.
    * (xml, json, script, or html)
    *
@@ -163,6 +186,21 @@ jsApplication.Ajax = function( )
    */
   this.setDataType = function( dt )
   {
+    /**
+     * @constant
+     * @type Object
+     * @enum {string}
+     */
+    var dataTypeMap = { XML: 'xml',
+                        JSON: 'json',
+                        SCRIPT: 'script',
+                        HTML: 'html' };
+
+    if ( ! dataTypeMap.hasOwnProperty( dt ) )
+    {
+      throw new TypeError( "Invalid Data Type: " + dt );
+    }
+
     dataType = dt;
     return _this;
   };
@@ -186,6 +224,21 @@ jsApplication.Ajax = function( )
    */
   this.setType = function( t )
   {
+    /**
+     * @constant
+     * @type Object
+     * @enum {string}
+     */
+    var typeMap = { POST: 'post',
+                    GET: 'get',
+                    PUT: 'put',
+                    DELETE: 'delete' };
+
+    if ( ! typeMap.hasOwnProperty( t ) )
+    {
+      throw new TypeError( "Invalid Type: " + t );
+    }
+
     type = t;
     return _this;
   };
@@ -206,9 +259,9 @@ jsApplication.Ajax = function( )
    * @param {boolean} 
    * @return {jsApplication.Ajax}
    */
-  this.setAsync = function( a )
+  this.setAsync = function( bool )
   {
-    async = Boolean(a);
+    async = Boolean( bool );
     return _this;
   };
 
@@ -236,17 +289,22 @@ jsApplication.Ajax = function( )
   };
 
   /**
-   * Reset memoize flag
+   * Set a callback for one of the supported channels
    *
-   * @return {void}
+   * @param {string}
+   * @param {object}
+   * @param {function} 
+   * @return {jsApplication.Ajax}
    */
-  this.resetMemoize = function( )
+  this.subscribe = function( ch, context, fn )
   {
-    memoize = false;
-  };
+    if ( ! channelsMap.hasOwnProperty( ch ) )
+    {
+      throw new TypeError( "Invalid Channel, can not subscribe to: " + ch );
+    }
 
-  this.subscribe = function( channel, context, fn )
-  {
+    var channel = channelsMap[ch];
+
     if ( ! channels[channel] )
     {
       channels[channel] = [];
@@ -271,15 +329,37 @@ jsApplication.Ajax = function( )
   /**
    * Method wraps ajax call funcationality.
    *
-   * ToDo:
-   *  - validate that data is of type StdDataObject
-   *
-   * @param {string} url
-   * @param {StdDataObject}
+   * @param {string} 
+   * @param {mixed}
    * @return {jsApplication.Ajax}
    */
   this.doAjax = function( url, data )
   {
+    var ajaxData = '';
+    var dType = typeof data;
+
+    if ( dType !== 'object' )
+    {
+      ajaxData = data;
+      console.log( 'Data passed in is not an object so we are not going to try to cache locally' );
+      memozie = false;
+    }
+    else
+    {
+      if ( data instanceof StdDataObject )
+      {
+        ajaxData = data;
+      }
+      else
+      {
+        ajaxData = new StdDataObject( );
+        for ( x in data )
+        {
+          ajaxData.setData( x, data[x] );
+        }
+      }
+    }
+
     var rtnData = undefined;
     if ( memoize )
     {
@@ -288,22 +368,22 @@ jsApplication.Ajax = function( )
         memoizedAjax = memoizeFnc( _this._doAjax, _this );
       }
 
-      rtnData = memoizedAjax( url, data );
+      rtnData = memoizedAjax( url, ajaxData );
     }
     else
     {
-      rtnData = _this._doAjax( url, data );
+      rtnData = _this._doAjax( url, ajaxData );
     }
   
     // not calling doAjaxSuccess if rtnData = undefined
     if ( rtnData !== undefined )
     {
-      this.publish( 'success', rtnData );
+      this.publish( channelsMap.SUCCESS, rtnData );
     }
     // else { console.log( 'not calling doAjaxSuccess bc rtnData = undefined' ); }
 
     // do not want to persist memoizer flag. dev has to call it each time explicitly
-    _this.resetMemoize( );
+    reset( );
     return this;
   };
 
@@ -340,7 +420,7 @@ jsApplication.Ajax = function( )
     if ( num < 0 )
     {
       // console.log( 'in _doAjax in error condition bc num = ' + num );
-      this.publish( 'error', 'abc123' );
+      this.publish( channelsMap.ERROR, 'My Test Error Message' );
       return rtnData;
     }
     rtnData = num;
@@ -355,12 +435,21 @@ jsApplication.Ajax = function( )
       type: this.getType( ),
       success: function( data )
       {
-        this.publish( 'success', data );
+        this.publish( channelsMap.SUCCESS, data );
         rtnData = data;
+      },
+      complete: function( jqXHR, textStatus )
+      {
+        this.publish( channelsMap.COMPLETE, textStatus );
       },
       error: function( xhr, textStatus, errorThrown )
       {
-        this.publish( 'error', xhr, textStatus, errorThrown );
+        this.publish( channelsMap.ERROR, xhr, textStatus, errorThrown );
+      },
+      statusCode: {
+        404: function() {
+          this.publish( channelsMap.STATUS_CODE_404 );
+        }
       }
     });
 */
@@ -376,7 +465,7 @@ jsApplication.Ajax = function( )
       return false;
     }
 
-    var args = Array.prototype.slice.call(arguments, 1);
+    var args = Array.prototype.slice.call( arguments, 1 );
 
     for ( var i = 0, l = channels[channel].length; i < l; i++ )
     {

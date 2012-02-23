@@ -7,7 +7,7 @@
 <script type="text/javascript">
 
 
-var testApp = {
+var myJsApp = {
 
   myJSApp : {},
 
@@ -18,58 +18,52 @@ var testApp = {
 
   getPaginatedStaticData : function( pageNumber )
   {
-    this.myJSApp.subscribe( 'success', this, this.ajaxSuccess1 ).subscribe( 'error', this, this.ajaxErrorHandler );
-    
-    ajaxData = new StdDataObject( );
-    ajaxData.setData( 'pageNumber', pageNumber );
+    this.myJSApp.subscribe( 'SUCCESS', this, this.ajaxSuccess1 ).subscribe( 'ERROR', this, this.ajaxErrorHandler );
     url = 'http://www.foo.com/static';
-
-    this.myJSApp.setShouldMemoize( true ).doAjax( url, ajaxData );
+    this.myJSApp.setShouldMemoize( true ).doAjax( url, {'pageNumber' : pageNumber} );
   },
 
   getDynamicData : function( memberId )
   {
-    this.myJSApp.subscribe( 'success', this, this.ajaxSuccess2 ).subscribe( 'error', this, this.ajaxErrorHandler );
-    
-    ajaxData = new StdDataObject( );
-    ajaxData.setData( 'memberId', memberId );
+    this.myJSApp.subscribe( 'SUCCESS', this, this.ajaxSuccess2 ).subscribe( 'ERROR', this, this.ajaxErrorHandler );
     url = 'http://www.foo.com/dynamic';
-
-    this.myJSApp.doAjax( url, ajaxData );
+    this.myJSApp.doAjax( url, {'memberId' : memberId} );
   },
 
   ajaxSuccess1 : function( data )
   {
-    console.log('doing ajax success 1 and data = ');
+    console.log('myJsApp::ajaxSuccess1() - data = ');
     console.log( data );
   },
 
   ajaxSuccess2 : function( data )
   {
-    console.log('doing ajax success 2 and data = ');
+    console.log('myJsApp::ajaxSuccess2() - data = ');
     console.log( data );
   },
 
   ajaxErrorHandler : function( msg )
   {
-    console.log( 'error message = ' + msg );
+    console.log( 'myJsApp::ajaxErrorHandler() - error = ' + msg );
   }
 
 };
 
 
-testApp.init();
+myJsApp.init();
 // get page 1 of static content
-testApp.getPaginatedStaticData( 1 );
+myJsApp.getPaginatedStaticData( 1 );
 // get page 2 of static content
-testApp.getPaginatedStaticData( 2 );
+myJsApp.getPaginatedStaticData( 2 );
 // get page 1 of static content (again).  should fetch from cache
-testApp.getPaginatedStaticData( 1 );
+myJsApp.getPaginatedStaticData( 1 );
 // contrived error case
-testApp.getPaginatedStaticData( -1 );
+myJsApp.getPaginatedStaticData( -1 );
 
 // get dynamic data
-testApp.getDynamicData( 12345678 );
+myJsApp.getDynamicData( 12345678 );
+
+
 
 
 </script>
